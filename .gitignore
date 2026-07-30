@@ -1,0 +1,18 @@
+# Banco de dados local
+database.sqlite
+*.sqlite
+*.sqlite3
+*.db
+
+# Logs e arquivos de runtime
+*.log
+error_log
+
+# Variáveis de ambiente
+.env
+.env.local
+
+# Configurações de IDEs
+.idea/
+.vscode/
+*.swp
