@@ -41,4 +41,28 @@ class Book {
 
         return (int) $this->db->lastInsertId();
     }
+
+    /**
+     * Atualiza um livro existente
+     */
+    public function update(int $id, array $data): bool {
+        $sql = "UPDATE books SET title = :title, author = :author, price = :price WHERE id = :id";
+        $stmt = $this->db->prepare($sql);
+
+        $stmt->bindValue(':title', $data['title'], PDO::PARAM_STR);
+        $stmt->bindValue(':author', $data['author'], PDO::PARAM_STR);
+        $stmt->bindValue(':price', $data['price']);
+        $stmt->bindValue(':id', $id, PDO::PARAM_INT);
+
+        return $stmt->execute();
+    }
+
+    /**
+     * Remove um livro do banco
+     */
+    public function delete(int $id): bool {
+        $stmt = $this->db->prepare("DELETE FROM books WHERE id = :id");
+        $stmt->bindValue(':id', $id, PDO::PARAM_INT);
+        return $stmt->execute();
+    }
 }

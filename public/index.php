@@ -44,19 +44,64 @@ try {
             }
             break;
 
-    case 'POST':
-        $rawInput = file_get_contents("php://input");
-        $data = json_decode($rawInput, true);
+        case 'POST':
+            $rawInput = file_get_contents("php://input");
+            $data = json_decode($rawInput, true);
 
-        $validatedData = BookValidator::validatePayload($data);
+            $validatedData = BookValidator::validatePayload($data);
 
-        $newId = $bookModel->create($validatedData);
+            $newId = $bookModel->create($validatedData);
 
-        http_response_code(201); // Created
-            echo json_encode([
-                "message" => "Livro criado com sucesso",
-                "id" => $newId
-            ]);
+            http_response_code(201); 
+                echo json_encode([
+                    "message" => "Livro criado com sucesso",
+                    "id" => $newId
+                ]);
+                break;
+        
+        case 'PUT':
+            if ($idParam === null) {
+                http_response_code(400);
+                echo json_encode(["error" => "ID do livro nao informado na URL."]);
+                exit();
+            }
+
+            $id = BookValidator::validateId($idParam);
+
+            if (!$bookModel->findById($id)) {
+                http_response_code(404);
+                echo json_encode(["error" => "Livro nao encontrado para atualizacao."]);
+                exit();
+            }
+
+            $rawInput = file_get_contents("php://input");
+            $data = json_decode($rawInput, true);
+
+            $validatedData = BookValidator::validatePayload($data);
+            $bookModel->update($id, $validatedData);
+
+            echo json_encode(["message" => "Livro atualizado com sucesso"]);
+            break;
+        
+        case 'DELETE':
+            if ($idParam === null) {
+                http_response_code(400);
+                echo json_encode(["error" => "ID do livro nao informado na URL."]);
+                exit();
+            }
+
+            $id = BookValidator::validateId($idParam);
+
+            if (!$bookModel->findById($id)) {
+                http_response_code(404);
+                echo json_encode(["error" => "Livro nao encontrado para remocao."]);
+                exit();
+            }
+
+            $bookModel->delete($id);
+
+            http_response_code(200);
+            echo json_encode(["message" => "Livro removido com sucesso"]);
             break;
 
     default:
@@ -64,9 +109,10 @@ try {
         echo json_encode(["error" => "Metodo nao permitido"]);
         break;
     }
+    
+    
 
 } catch (\PDOException $e) {
-    // Grava o erro real nos logs do servidor e omite o stack trace para o cliente
     error_log("Database Error: " . $e->getMessage());
 http_response_code(500);
 
