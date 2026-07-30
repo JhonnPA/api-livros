@@ -1,21 +1,15 @@
 <?php
 
-function getconnection(): pdo {
-    // Busca o caminho do banco de forma flexível sem hardcode absoluto
+function getconnection(): PDO {
     $databasefile = __DIR__ . "/../" . (getenv('DB_PATH') ?: 'database.sqlite');
     
     $dsn = "sqlite:" . $databasefile;
     
     $options = [
-        // Exceções reais em erros de SQL (não engole erros)
-        pdo::attr_errmode => pdo::errmode_exception,
-        
-        // Retorna arrays associativos limpos
-        pdo::attr_default_fetch_mode => pdo::fetch_assoc,
-        
-        // Desativa prepared statements emulados (força o driver a separar query e dados)
-        pdo::attr_emulate_prepares => false,
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        PDO::ATTR_EMULATE_PREPARES => false,
     ];
 
-    return new pdo($dsn, null, null, $options);
+    return new PDO($dsn, null, null, $options);
 }
