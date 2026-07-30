@@ -1,5 +1,8 @@
 <?php
+
+require_once __DIR__ . "/../config/database.php";
 require_once __DIR__ . "/../src/Validators/BookValidator.php";
+require_once __DIR__ . "/../src/Models/Book.php";
 
 header("Content-Type: application/json; charset=UTF-8");
 
@@ -18,20 +21,28 @@ if (!isset($uriSegments[0]) || $uriSegments[0] !== 'api' || !isset($uriSegments[
 }
 
 $idParam = $uriSegments[2] ?? null;
+try {
+    $db = getConnection();
+    $bookModel = new Book($db);
 
-switch ($method) {
-    case 'GET':
-        if ($idParam !== null) {
-            $id = BookValidator::validateId($idParam);
+    switch ($method) {
+        case 'GET':
+            if ($idParam !== null) {
+                $id = BookValidator::validateId($idParam);
 
-            echo json_encode([
-                "message" => "ID validado com sucesso!",
-                "id_validado" => $id
-            ]);
-        } else {
-            echo json_encode(["message" => "Listagem geral (mock)"]);
-        }
-        break;
+                $book = $bookModel->findById($id);
+
+                if (!$book) {
+                    http_response_code(404);
+                    echo json_encode(["error" => "Livro nao encontrado"]);
+                    exit();
+                }
+
+                echo json_encode(["data" => $book]);
+            } else {
+                echo json_encode(["data" => $bookModel->findAll()]);
+            }
+            break;
 
     case 'POST':
         $rawInput = file_get_contents("php://input");
@@ -39,14 +50,30 @@ switch ($method) {
 
         $validatedData = BookValidator::validatePayload($data);
 
-        echo json_encode([
-            "message" => "Payload validado e sanitizado com sucesso!",
-            "data" => $validatedData
-        ]);
-        break;
+        $newId = $bookModel->create($validatedData);
+
+        http_response_code(201); // Created
+            echo json_encode([
+                "message" => "Livro criado com sucesso",
+                "id" => $newId
+            ]);
+            break;
 
     default:
         http_response_code(405);
         echo json_encode(["error" => "Metodo nao permitido"]);
         break;
+    }
+
+} catch (\PDOException $e) {
+    // Grava o erro real nos logs do servidor e omite o stack trace para o cliente
+    error_log("Database Error: " . $e->getMessage());
+http_response_code(500);
+
+    echo json_encode(["error" => "Erro interno no servidor de banco de dados."]);
+} catch (\Throwable $e) {
+    error_log("General Error: " . $e->getMessage());
+    
+    http_response_code(500);
+    echo json_encode(["error" => "Ocorreu um erro inesperado."]);
 }
